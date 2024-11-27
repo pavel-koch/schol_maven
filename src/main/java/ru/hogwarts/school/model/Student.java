@@ -1,14 +1,16 @@
 package ru.hogwarts.school.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Objects;
 
 public class Student {
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private long id;
     private String name;
     private int age;
 
-    public Student(long id, String name, int age) {
-        this.id = id;
+    public Student(String name, int age) {
         this.name = name;
         this.age = age;
     }

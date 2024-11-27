@@ -22,8 +22,9 @@ public class StudentService {
     }
 
 
-    public Student editStudent(Student student) {
-        studentsRepository.put(student.getId(), student);
+    public Student editStudent(long id, Student student) {
+        student.setId(id);
+        studentsRepository.put(id, student);
         return student;
     }
 

@@ -1,7 +1,9 @@
 package ru.hogwarts.school.controller;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.web.bind.annotation.*;
 import ru.hogwarts.school.model.Faculty;
+import ru.hogwarts.school.model.Student;
 import ru.hogwarts.school.service.FacultyService;
 
 import java.util.List;
@@ -40,5 +42,14 @@ public class FacultyController {
     @GetMapping("/get/by-color")
     public List<Faculty> findAllByColor(@RequestParam("color") String color) {
         return facultyService.findAllByColor(color);
+    }
+
+
+    @PostConstruct
+    public void init() {
+        createFaculty(new Faculty("Филфак", "Фиолетовый"));
+        createFaculty(new Faculty("Технологический", "Красный"));
+        createFaculty(new Faculty("Гуманитарный", "Зеленый"));
+        createFaculty(new Faculty("Педогогический", "Синий"));
     }
 }
