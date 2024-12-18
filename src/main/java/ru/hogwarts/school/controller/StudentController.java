@@ -32,9 +32,9 @@ public class StudentController {
         return studentService.findStudent(id);
     }
 
-    @PutMapping("/edit")
-    public Student editStudent(@RequestBody long id, Student student) {
-        return studentService.editStudent(id, student);
+    @PutMapping("/update")
+    public Student updateStudent(@RequestParam("id") long id, @RequestBody Student studentForUpdate) {
+        return studentService.updateStudent(id, studentForUpdate);
     }
 
     @GetMapping("/get/by-age")

@@ -2,6 +2,8 @@ package ru.hogwarts.school.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import ru.hogwarts.school.model.Student;
 
 import java.util.List;
@@ -9,8 +11,10 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SpringBootTest
 class StudentServiceTest {
-    private final StudentService studentService = new StudentService();
+    @Autowired
+    private StudentService studentService;
 
     @Test
     @DisplayName("Добавление студента")
@@ -45,7 +49,7 @@ class StudentServiceTest {
         Student expected = new Student("test", 22);
 
         //test
-        Student actual = studentService.editStudent(saveStudent.getId(), expected);
+        Student actual = studentService.updateStudent(saveStudent.getId(), expected);
 
         //check
         assertEquals(actual, expected);

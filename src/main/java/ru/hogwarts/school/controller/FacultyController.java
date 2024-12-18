@@ -34,9 +34,9 @@ public class FacultyController {
     }
 
 
-    @PutMapping("/edit")
-    public Faculty editStudent(Faculty faculty) {
-        return facultyService.editFaculty(faculty);
+    @PutMapping("/update")
+    public Faculty updateFaculty(@RequestParam("id") long id, @RequestBody Faculty facultyForUpdate) {
+        return facultyService.updateFaculty(id, facultyForUpdate);
     }
 
     @GetMapping("/get/by-color")
