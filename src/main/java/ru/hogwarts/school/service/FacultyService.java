@@ -5,7 +5,6 @@ import ru.hogwarts.school.exeption.FacultyNotFoudnExeption;
 import ru.hogwarts.school.model.Faculty;
 import ru.hogwarts.school.repository.FacultyRepository;
 
-import java.util.HashMap;
 import java.util.List;
 
 @Service
@@ -45,5 +44,10 @@ public class FacultyService {
         return facultiesRepository.findAll().stream()
                 .filter(faculty -> faculty.getColor().equals(color))
                 .toList();
+    }
+
+
+    public List<Faculty> getFacultyByColorOrName(String color, String name) {
+        return facultiesRepository.findByColorIgnoreCaseOrNameIgnoreCase(color, name);
     }
 }

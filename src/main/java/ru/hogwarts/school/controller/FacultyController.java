@@ -24,7 +24,7 @@ public class FacultyController {
 
 
     @DeleteMapping("{id}/delete")
-    public Faculty deleteStudent (long id) {
+    public Faculty deleteStudent(long id) {
         return facultyService.deleteFaculty(id);
     }
 
@@ -44,12 +44,17 @@ public class FacultyController {
         return facultyService.findAllByColor(color);
     }
 
+    @GetMapping("/get/by-color-or-name")
+    public List<Faculty> getFacultyByColorOrName(@RequestParam("color") String color,
+                                                 @RequestParam("name") String name) {
+        return facultyService.getFacultyByColorOrName(color, name);
+    }
 
-    @PostConstruct
+   /* @PostConstruct
     public void init() {
         createFaculty(new Faculty("Филфак", "Фиолетовый"));
         createFaculty(new Faculty("Технологический", "Красный"));
         createFaculty(new Faculty("Гуманитарный", "Зеленый"));
         createFaculty(new Faculty("Педогогический", "Синий"));
-    }
+    }*/
 }
