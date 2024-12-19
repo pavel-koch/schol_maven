@@ -50,11 +50,8 @@ public class FacultyController {
         return facultyService.getFacultyByColorOrName(color, name);
     }
 
-   /* @PostConstruct
-    public void init() {
-        createFaculty(new Faculty("Филфак", "Фиолетовый"));
-        createFaculty(new Faculty("Технологический", "Красный"));
-        createFaculty(new Faculty("Гуманитарный", "Зеленый"));
-        createFaculty(new Faculty("Педогогический", "Синий"));
-    }*/
+        @GetMapping("/{id_student}/get/faculty")
+    public Faculty findFacultyByStudentId(@PathVariable("id_student") long id) {
+        return facultyService.findFacultyByStudentId(id);
+    }
 }

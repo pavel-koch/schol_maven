@@ -48,22 +48,11 @@ public class StudentController {
                                           @RequestParam("ageMax") int ageMax) {
         return studentService.findByAgeBetween(ageMin, ageMax);
     }
-/*    @GetMapping("/{id}/get/faculty")
-    public Faculty findFacultyByStudentId(@PathVariable("id") long id) {
-        return studentService.findFacultyByStudentId(id);
-    }*/
+
 
     @GetMapping("/{idFaculty}/get/student")
     public List<Student> findByFacultyId(@PathVariable("idFaculty") long idFaculty) {
         return studentService.findByFacultyId(idFaculty);
     }
 
-    /*@PostConstruct
-    public void init() {
-        createStudent(new Student("Олег", 20));
-        createStudent(new Student("Андрей", 36));
-        createStudent(new Student("Ира", 43));
-        createStudent(new Student("Павел", 36));
-        createStudent(new Student("Виктор", 30));
-    }*/
 }
