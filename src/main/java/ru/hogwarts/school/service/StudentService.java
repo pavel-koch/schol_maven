@@ -1,15 +1,11 @@
 package ru.hogwarts.school.service;
 
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
-import ru.hogwarts.school.exeption.FacultyNotFoudnExeption;
-import ru.hogwarts.school.exeption.StudentNotFoudnExeption;
-import ru.hogwarts.school.model.Faculty;
+import ru.hogwarts.school.exeption.StudentNotFoundException;
 import ru.hogwarts.school.model.Student;
 import ru.hogwarts.school.repository.FacultyRepository;
 import ru.hogwarts.school.repository.StudentRepository;
 
-import java.util.HashMap;
 import java.util.List;
 
 @Service
@@ -28,20 +24,20 @@ public class StudentService {
     }
 
     public Student findStudent(long id) {
-        return studentsRepository.findById(id).orElseThrow(() -> new StudentNotFoudnExeption(id));
+        return studentsRepository.findById(id).orElseThrow(() -> new StudentNotFoundException(id));
     }
 
 
     public Student updateStudent(long id, Student studentForUpdate) {
         if (!studentsRepository.existsById(id)) {
-            throw new StudentNotFoudnExeption(id);
+            throw new StudentNotFoundException(id);
         }
         studentForUpdate.setId(id);
         return studentsRepository.save(studentForUpdate);
     }
 
     public Student deleteStudent(long id) {
-        Student student = studentsRepository.findById(id).orElseThrow(() -> new StudentNotFoudnExeption(id));
+        Student student = studentsRepository.findById(id).orElseThrow(() -> new StudentNotFoundException(id));
         studentsRepository.delete(student);
         return student;
     }
