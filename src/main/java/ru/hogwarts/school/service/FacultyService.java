@@ -50,8 +50,4 @@ public class FacultyService {
     public List<Faculty> getFacultyByColorOrName(String color, String name) {
         return facultiesRepository.findByColorIgnoreCaseOrNameIgnoreCase(color, name);
     }
-
-    public Faculty findFacultyByStudentId(long id) {
-        return facultiesRepository.findByStudentId(id);
-    }
 }

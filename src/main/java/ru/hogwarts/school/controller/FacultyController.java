@@ -49,9 +49,4 @@ public class FacultyController {
                                                  @RequestParam("name") String name) {
         return facultyService.getFacultyByColorOrName(color, name);
     }
-
-        @GetMapping("/{id_student}/get/faculty")
-    public Faculty findFacultyByStudentId(@PathVariable("id_student") long id) {
-        return facultyService.findFacultyByStudentId(id);
-    }
 }

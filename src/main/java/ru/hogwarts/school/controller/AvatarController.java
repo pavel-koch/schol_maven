@@ -25,15 +25,22 @@ public class AvatarController {
         avatarService.uploadImage(studentId, multipartFile);
     }
 
-    @GetMapping(path = "/get/from-db", produces = MediaType.IMAGE_JPEG_VALUE)
+/*    @GetMapping(path = "/get/from-db", produces = MediaType.IMAGE_JPEG_VALUE)
     public byte[] getAvatarFromDB(@RequestParam("studentId") long studentId) {
         return avatarService.getAvatarFromDB(studentId);
+    }*/
+
+    @GetMapping("/get/from-db")
+    public ResponseEntity<byte[]> getAvatarFromDB(@RequestParam("studentId") long studentId) {
+        Avatar avatar = avatarService.getAvatarFromDB(studentId);
+        return ResponseEntity.status(HttpStatus.OK)
+                .contentType(MediaType.parseMediaType(avatar.getMediaType()))
+                .body(avatar.getData());
     }
 
     @GetMapping(path = "/get/from-local", produces = MediaType.IMAGE_JPEG_VALUE)
-    public ResponseEntity<byte[]> getAvatarFromLocal(@RequestParam("studentId") long studentId) {
-        Avatar avatar = avatarService.getAvatarFromLocal(studentId);
-        return ResponseEntity.status(HttpStatus.OK).contentType().body(avtar);
+    public byte[] getAvatarFromLocal(@RequestParam("studentId") long studentId) {
+        return avatarService.getAvatarFromLocal(studentId);
     }
 
 }

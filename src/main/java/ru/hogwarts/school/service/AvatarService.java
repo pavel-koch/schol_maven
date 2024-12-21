@@ -10,6 +10,8 @@ import ru.hogwarts.school.model.Student;
 import ru.hogwarts.school.repository.AvatarRepository;
 import ru.hogwarts.school.repository.StudentRepository;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -65,14 +67,36 @@ public class AvatarService {
         }
     }
 
-    public byte[] getAvatarFromDB(long studentId) {
+/*    public byte[] getAvatarFromDB(long studentId) {
         return avatarRepository.getByStudentId(studentId)
                 .orElseThrow(() -> new AvatarNotFoundException(studentId))
                 .getData();
+    }*/
+
+
+    public Avatar getAvatarFromDB(long studentId) {
+        chekExist(studentId);
+        return avatarRepository.getByStudentId(studentId)
+                .orElseThrow(() -> new AvatarNotFoundException(studentId));
     }
 
-    public Avatar getAvatarFromLocal(long studentId) {
-        return avatarRepository.getByStudentId(studentId);
+    public byte[] getAvatarFromLocal(long studentId){
+        chekExist(studentId);
+        Avatar avatar = avatarRepository.getByStudentId(studentId)
+                .orElseThrow(() -> new AvatarNotFoundException(studentId));
+        String filePath = avatar.getFilePath();
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filePath))) {
+            return bis.readAllBytes();
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Получение картинки не возможно: " + e.getMessage());
+        }
+    }
+
+    private void chekExist(long studentId) {
+        boolean studentExist = studentRepository.existsById(studentId);
+        if (!studentExist) {
+            throw new StudentNotFoundException(studentId);
+        }
     }
 
 }
