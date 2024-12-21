@@ -10,9 +10,4 @@ import java.util.List;
 @Repository
 public interface FacultyRepository extends JpaRepository<Faculty, Long> {
     List<Faculty> findByColorIgnoreCaseOrNameIgnoreCase(String color, String name);
-
-    @Query(value = "SELECT faculty.* FROM faculty, student \n" +
-            "where student.faculty_id = faculty.id\n" +
-            "and student.id = :id", nativeQuery = true)
-    Faculty findByStudentId(long id);
 }

@@ -55,4 +55,10 @@ public class StudentController {
         return studentService.findByFacultyId(idFaculty);
     }
 
+
+    @GetMapping("/{id_student}/get/faculty")
+    public Faculty findFacultyByStudentId(@PathVariable("id_student") long id) {
+        return studentService.findStudent(id).getFaculty();
+    }
+
 }
