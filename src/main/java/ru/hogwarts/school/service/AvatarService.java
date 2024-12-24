@@ -1,6 +1,7 @@
 package ru.hogwarts.school.service;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.hogwarts.school.exeption.AvatarNotFoundException;
@@ -15,6 +16,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -38,8 +40,6 @@ public class AvatarService {
         createAvatar(studentId, multipartFile, filePath.toString());
 
         multipartFile.transferTo(filePath);
-
-
     }
 
     private String getExtension(String originalPath) {
@@ -67,20 +67,13 @@ public class AvatarService {
         }
     }
 
-/*    public byte[] getAvatarFromDB(long studentId) {
-        return avatarRepository.getByStudentId(studentId)
-                .orElseThrow(() -> new AvatarNotFoundException(studentId))
-                .getData();
-    }*/
-
-
     public Avatar getAvatarFromDB(long studentId) {
         chekExist(studentId);
         return avatarRepository.getByStudentId(studentId)
                 .orElseThrow(() -> new AvatarNotFoundException(studentId));
     }
 
-    public byte[] getAvatarFromLocal(long studentId){
+    public byte[] getAvatarFromLocal(long studentId) {
         chekExist(studentId);
         Avatar avatar = avatarRepository.getByStudentId(studentId)
                 .orElseThrow(() -> new AvatarNotFoundException(studentId));
@@ -97,6 +90,11 @@ public class AvatarService {
         if (!studentExist) {
             throw new StudentNotFoundException(studentId);
         }
+    }
+
+    public List<Avatar> getAllAvatar(Integer pageNumber, Integer pageSize) {
+        PageRequest pageRequest = PageRequest.of(pageNumber - 1, pageSize);
+        return avatarRepository.findAll(pageRequest).getContent();
     }
 
 }

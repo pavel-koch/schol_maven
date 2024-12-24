@@ -60,4 +60,19 @@ public class StudentController {
         return studentService.findStudent(id).getFaculty();
     }
 
+    @GetMapping("/countStudent")
+    public int countStudent() {
+        return studentService.countStudent();
+    }
+
+    @GetMapping("/avgAgeStudent")
+    public long avgAgeStudent() {
+        return studentService.avgAgeStudent();
+    }
+
+    @GetMapping("/getLastFiveStudent")
+    public List<Student> getLastFiveStudent() {
+        return studentService.getLastFiveStudent();
+    }
+
 }

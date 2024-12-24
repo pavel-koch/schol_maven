@@ -24,7 +24,7 @@ public class FacultyController {
 
 
     @DeleteMapping("{id}/delete")
-    public Faculty deleteStudent(long id) {
+    public Faculty deleteFaculty(long id) {
         return facultyService.deleteFaculty(id);
     }
 

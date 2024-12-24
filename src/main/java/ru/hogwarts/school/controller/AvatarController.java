@@ -9,6 +9,7 @@ import ru.hogwarts.school.model.Avatar;
 import ru.hogwarts.school.service.AvatarService;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/avatar")
@@ -25,11 +26,6 @@ public class AvatarController {
         avatarService.uploadImage(studentId, multipartFile);
     }
 
-/*    @GetMapping(path = "/get/from-db", produces = MediaType.IMAGE_JPEG_VALUE)
-    public byte[] getAvatarFromDB(@RequestParam("studentId") long studentId) {
-        return avatarService.getAvatarFromDB(studentId);
-    }*/
-
     @GetMapping("/get/from-db")
     public ResponseEntity<byte[]> getAvatarFromDB(@RequestParam("studentId") long studentId) {
         Avatar avatar = avatarService.getAvatarFromDB(studentId);
@@ -41,6 +37,13 @@ public class AvatarController {
     @GetMapping(path = "/get/from-local", produces = MediaType.IMAGE_JPEG_VALUE)
     public byte[] getAvatarFromLocal(@RequestParam("studentId") long studentId) {
         return avatarService.getAvatarFromLocal(studentId);
+    }
+
+    @GetMapping("/getAllAvatar")
+    public ResponseEntity<List<Avatar>> getAllAvatar(@RequestParam("page") Integer pageNumber,
+                                                     @RequestParam("size") Integer pageSize) {
+        List<Avatar> avatars = avatarService.getAllAvatar(pageNumber, pageSize);
+        return ResponseEntity.ok(avatars);
     }
 
 }
