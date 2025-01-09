@@ -47,13 +47,13 @@ public class AvatarService {
     }
 
     private String getExtension(String originalPath) {
-        logger.info("Метод");
+        logger.info("Метод получения расширения");
         return originalPath.substring(originalPath.lastIndexOf(".") + 1);
     }
 
 
     public void createAvatar(long studentId, MultipartFile multipartFile, String filePath) throws IOException {
-        logger.info("Метод");
+        logger.info("Метод создания аватара");
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new StudentNotFoundException(studentId));
         avatarRepository.save(new Avatar(
@@ -67,7 +67,7 @@ public class AvatarService {
 
 
     private void createDirectory() throws IOException {
-        logger.info("Метод");
+        logger.info("Метод создания директории");
         Path path = Path.of(pathDir);
         if (Files.notExists(path)) {
             Files.createDirectory(path);
@@ -75,14 +75,14 @@ public class AvatarService {
     }
 
     public Avatar getAvatarFromDB(long studentId) {
-        logger.info("Метод");
+        logger.info("Метод получения аватара из базы данных");
         chekExist(studentId);
         return avatarRepository.getByStudentId(studentId)
                 .orElseThrow(() -> new AvatarNotFoundException(studentId));
     }
 
     public byte[] getAvatarFromLocal(long studentId) {
-        logger.info("Метод");
+        logger.info("Метод получения аватара из локального хранилища");
         chekExist(studentId);
         Avatar avatar = avatarRepository.getByStudentId(studentId)
                 .orElseThrow(() -> new AvatarNotFoundException(studentId));
@@ -95,7 +95,7 @@ public class AvatarService {
     }
 
     private void chekExist(long studentId) {
-        logger.info("Метод");
+        logger.info("Метод проверки наличия изображения");
         boolean studentExist = studentRepository.existsById(studentId);
         if (!studentExist) {
             throw new StudentNotFoundException(studentId);
@@ -103,7 +103,7 @@ public class AvatarService {
     }
 
     public List<Avatar> getAllAvatar(Integer pageNumber, Integer pageSize) {
-        logger.info("Метод");
+        logger.info("Метод получения всех аватаров");
         PageRequest pageRequest = PageRequest.of(pageNumber - 1, pageSize);
         return avatarRepository.findAll(pageRequest).getContent();
     }
