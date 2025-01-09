@@ -7,7 +7,9 @@ import ru.hogwarts.school.exeption.FacultyNotFoundException;
 import ru.hogwarts.school.model.Faculty;
 import ru.hogwarts.school.repository.FacultyRepository;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Service
 public class FacultyService {
@@ -58,5 +60,19 @@ public class FacultyService {
     public List<Faculty> getFacultyByColorOrName(String color, String name) {
         logger.info("Метод поиска по цвету или названию факультета");
         return facultiesRepository.findByColorIgnoreCaseOrNameIgnoreCase(color, name);
+    }
+
+    public String getLongNameFaculty() {
+        return facultiesRepository.findAll().stream()
+                .map(Faculty::getName)
+                .max(Comparator.comparing(String::length))
+                .orElse("");
+    }
+
+    public int getSum() {
+        return Stream.iterate(1, a -> a + 1)
+                .limit(1_000_000)
+                .parallel()
+                .reduce(0, Integer::sum);
     }
 }

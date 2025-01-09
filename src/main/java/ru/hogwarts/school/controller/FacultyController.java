@@ -49,4 +49,12 @@ public class FacultyController {
                                                  @RequestParam("name") String name) {
         return facultyService.getFacultyByColorOrName(color, name);
     }
+    @GetMapping("/get/long-name-faculty")
+    public String getLongNameFaculty() {
+        return facultyService.getLongNameFaculty();
+    }
+    @GetMapping("/get/sum")
+    public int getSum() {
+        return facultyService.getSum();
+    }
 }

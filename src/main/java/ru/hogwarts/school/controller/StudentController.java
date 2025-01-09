@@ -75,4 +75,15 @@ public class StudentController {
         return studentService.getLastFiveStudent();
     }
 
+    @GetMapping("/get/by-beginName")
+    public List<String> findAllByBeginName(@RequestParam("beginName")String beginName){
+        return studentService.findAllByBeginName(beginName);
+    }
+
+    @GetMapping("/avg-age-student-stream")
+    public double getAverageAgeStudents() {
+        return studentService.getAverageAgeStudents();
+    }
+
+
 }
