@@ -8,6 +8,7 @@ import ru.hogwarts.school.model.Student;
 import ru.hogwarts.school.repository.FacultyRepository;
 import ru.hogwarts.school.repository.StudentRepository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -98,12 +99,56 @@ public class StudentService {
     }
 
     public double getAverageAgeStudents() {
+        logger.info("Получаем средний возраст студентов");
         return studentsRepository.findAll().stream()
                 .mapToInt(Student::getAge)
                 .average()
                 .orElse(0.0);
     }
 
+    public void getPrintParallel() {
+        logger.info("Получаем имена первых шести студентов");
+        List<Student> students = studentsRepository.findAll();
+
+        if (students.size() < 6) {
+            System.out.println("Слишком мало студентов");
+        }
+        printInStream(students, 0, 2);
+        Thread thread = new Thread(() -> printInStream(students, 2, 2));
+        Thread thread2 = new Thread(() -> printInStream(students, 4, 2));
+
+        thread.start();
+        thread2.start();
+
+    }
+
+    private void printInStream(Collection<Student> students, int offset, int limit) {
+        System.out.println("Выполняется тред: %s".formatted(Thread.currentThread().getName()));
+        students.stream()
+                .skip(offset)
+                .limit(limit)
+                .forEach(System.out::println);
+    }
+
+    private synchronized void printInStreamSynchronized(Collection<Student> students, int offset, int limit) {
+        printInStream(students, offset, limit);
+    }
+
+    public void getPrintSynchronized() {
+        logger.info("Получаем имена первых шести студентов");
+        List<Student> students = studentsRepository.findAll();
+
+        if (students.size() < 6) {
+            System.out.println("Слишком мало студентов");
+        }
+        printInStreamSynchronized(students, 0, 2);
+        Thread thread = new Thread(() -> printInStreamSynchronized(students, 2, 2));
+        Thread thread2 = new Thread(() -> printInStreamSynchronized(students, 4, 2));
+
+        thread.start();
+        thread2.start();
+
+    }
 
 }
 
