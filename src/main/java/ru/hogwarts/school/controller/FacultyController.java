@@ -1,6 +1,7 @@
 package ru.hogwarts.school.controller;
 
-import jakarta.annotation.PostConstruct;
+import jakarta.persistence.OneToMany;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.hogwarts.school.model.Faculty;
 import ru.hogwarts.school.model.Student;
@@ -13,48 +14,53 @@ import java.util.List;
 public class FacultyController {
     private final FacultyService facultyService;
 
+
     public FacultyController(FacultyService facultyService) {
         this.facultyService = facultyService;
     }
 
-    @PostMapping("/add")
+    @OneToMany(mappedBy = "faculty")
+    private List<Student> students;
+
+    @PostMapping
     public Faculty createFaculty(@RequestBody Faculty faculty) {
         return facultyService.createFaculty(faculty);
     }
 
-
-    @DeleteMapping("{id}/delete")
-    public Faculty deleteFaculty(long id) {
-        return facultyService.deleteFaculty(id);
+    @GetMapping("{id}")
+    public ResponseEntity<Faculty> getFaculty(@PathVariable long id) {
+        return facultyService.getFacultyById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("{id}/get")
-    public Faculty getFacultyInfo(@PathVariable Long id) {
-        return facultyService.findFaculty(id);
+    @PutMapping
+    public Faculty updateFaculty(@RequestBody Faculty faculty) {
+        return facultyService.updateFaculty(faculty);
     }
 
-
-    @PutMapping("/update")
-    public Faculty updateFaculty(@RequestParam("id") long id, @RequestBody Faculty facultyForUpdate) {
-        return facultyService.updateFaculty(id, facultyForUpdate);
+    @DeleteMapping("{id}")
+    public void deleteFaculty(@PathVariable long id) {
+        facultyService.deleteFaculty(id);
     }
 
-    @GetMapping("/get/by-color")
-    public List<Faculty> findAllByColor(@RequestParam("color") String color) {
-        return facultyService.findAllByColor(color);
+    @GetMapping("/color/{color}")
+    public List<Faculty> getFacultiesByColor(@PathVariable String color) {
+        return facultyService.getFacultiesByColor(color);
     }
 
-    @GetMapping("/get/by-color-or-name")
-    public List<Faculty> getFacultyByColorOrName(@RequestParam("color") String color,
-                                                 @RequestParam("name") String name) {
-        return facultyService.getFacultyByColorOrName(color, name);
+    @GetMapping("/search")
+    public List<Faculty> searchFaculties(@RequestParam String searchTerm) {
+        return facultyService.searchFaculties(searchTerm);
     }
-    @GetMapping("/get/long-name-faculty")
-    public String getLongNameFaculty() {
-        return facultyService.getLongNameFaculty();
+
+    @GetMapping("/{id}/students")
+    public List<Student> getFacultyStudents(@PathVariable Long id) {
+        return facultyService.getFacultyStudents(id);
     }
-    @GetMapping("/get/sum")
-    public int getSum() {
-        return facultyService.getSum();
+
+    @GetMapping("/longest-name")
+    public String getLongestFacultyName() {
+        return facultyService.getLongestFacultyName();
     }
 }

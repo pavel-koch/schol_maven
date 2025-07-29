@@ -1,154 +1,133 @@
 package ru.hogwarts.school.service;
 
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import ru.hogwarts.school.exeption.StudentNotFoundException;
+import ru.hogwarts.school.model.Faculty;
 import ru.hogwarts.school.model.Student;
-import ru.hogwarts.school.repository.FacultyRepository;
 import ru.hogwarts.school.repository.StudentRepository;
 
-import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
+@Transactional
 public class StudentService {
-    private final StudentRepository studentsRepository;
-
-    private final FacultyRepository facultiesRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(StudentService.class);
 
-    public StudentService(StudentRepository studentsRepository, FacultyRepository facultiesRepository) {
-        this.studentsRepository = studentsRepository;
-        this.facultiesRepository = facultiesRepository;
+    private final StudentRepository studentRepository;
+
+    public StudentService(StudentRepository studentRepository) {
+        this.studentRepository = studentRepository;
+        logger.debug("StudentService initialized with repository: {}", studentRepository);
     }
 
     public Student createStudent(Student student) {
-        logger.info("Метод создания студента");
-        logger.debug("Создание студента с именем: " + student.getName());
-        return studentsRepository.save(student);
+
+        logger.info("Creating new student: {}", student);
+        Student createdStudent = studentRepository.save(student);
+        logger.debug("Created student with ID: {}", createdStudent.getId());
+        return createdStudent;
     }
 
-    public Student findStudent(long id) {
-        logger.info("Метод поиска студента по id");
-        return studentsRepository.findById(id).orElseThrow(() -> new StudentNotFoundException(id));
-    }
-
-
-    public Student updateStudent(long id, Student studentForUpdate) {
-        logger.info("Метод для обновления данных студента");
-        if (!studentsRepository.existsById(id)) {
-            logger.warn("Нет такого студента по id: " + id);
-            throw new StudentNotFoundException(id);
+    public Optional<Student> getStudentById(long id) {
+        logger.debug("Fetching student by ID: {}", id);
+        Optional<Student> student = studentRepository.findById(id);
+        if (student.isEmpty()) {
+            logger.warn("Student with ID {} not found", id);
+        } else {
+            logger.debug("Found student: {}", student.get());
         }
-        logger.debug("Обновление студента: " + studentForUpdate.getName() + " с id: " + id);
-        studentForUpdate.setId(id);
-        return studentsRepository.save(studentForUpdate);
-    }
-
-    public Student deleteStudent(long id) {
-        logger.info("Метод удаления студента");
-        Student student = studentsRepository.findById(id).orElseThrow(() -> new StudentNotFoundException(id));
-        studentsRepository.delete(student);
-        logger.debug("Дебаг удаления студента по id " + id);
         return student;
     }
 
-    public List<Student> findAllByAge(int age) {
-        logger.info("Сортируем студентов по возрасту");
-        return studentsRepository.findAll().stream()
-                .filter(student -> student.getAge() == age)
-                .toList();
+    public Student updateStudent(Student student) {
+        logger.info("Updating student with ID: {}", student.getId());
+        Student updatedStudent = studentRepository.save(student);
+        logger.debug("Updated student: {}", updatedStudent);
+        return updatedStudent;
     }
 
-    public List<Student> findByAgeBetween(int ageMin, int ageMax) {
-        logger.info("Сортируем студентов по возрасту между минимумом и максимом");
-        return studentsRepository.findByAgeBetween(ageMin, ageMax);
+    public void deleteStudent(long id) {
+        logger.info("Deleting student with ID: {}", id);
+        if (!studentRepository.existsById(id)) {
+            logger.error("Attempt to delete non-existent student with ID: {}", id);
+            throw new RuntimeException("Student not found with ID: " + id);
+        }
+        studentRepository.deleteById(id);
+        logger.debug("Student with ID {} deleted successfully", id);
     }
 
-    public List<Student> findByFacultyId(long id) {
-        logger.info("Поиск студента по факультету");
-        return studentsRepository.findByFacultyId(id);
+    public List<Student> getStudentsByAge(int age) {
+        logger.debug("Fetching students by age: {}", age);
+        List<Student> students = studentRepository.findByAge(age);
+        logger.debug("Found {} students with age {}", students.size(), age);
+        return students;
     }
 
-    public int countStudent() {
-        logger.info("Находим количество студентов");
-        return studentsRepository.countStudent();
+    public List<Student> findStudentsByAgeBetween(int minAge, int maxAge) {
+        logger.debug("Fetching students with age between {} and {}", minAge, maxAge);
+        List<Student> students = studentRepository.findByAgeBetween(minAge, maxAge);
+        logger.debug("Found {} students in age range", students.size());
+        return students;
     }
 
-    public long avgAgeStudent() {
-        logger.info("Находим средний возраст студентов");
-        return studentsRepository.avgAgeStudent();
+    public Faculty getStudentFaculty(Long studentId) {
+        logger.debug("Fetching faculty for student ID: {}", studentId);
+        return studentRepository.findById(studentId)
+                .map(student -> {
+                    Faculty faculty = student.getFaculty();
+                    logger.debug("Found faculty {} for student {}", faculty, student);
+                    return faculty;
+                })
+                .orElseThrow(() -> {
+                    logger.error("Student not found with ID: {}", studentId);
+                    return new RuntimeException("Student not found");
+                });
     }
 
-    public List<Student> getLastFiveStudent() {
-        logger.info("Находим пять последних студентов");
-        return studentsRepository.getLastFiveStudent();
+    public Integer getTotalStudentsCount() {
+        logger.debug("Fetching total students count");
+        Integer count = studentRepository.getTotalCount();
+        logger.info("Total students count: {}", count);
+        return count;
     }
 
-    public List<String> findAllByBeginName(String beginName) {
-        logger.info("Сортируем студентов по первой букве имени");
-        return studentsRepository.findAll().stream()
+    public Double getAverageStudentsAge() {
+        logger.debug("Calculating average students age");
+        Double averageAge = studentRepository.getAverageAge();
+        logger.info("Average students age: {}", averageAge);
+        return averageAge;
+    }
+
+    public List<Student> getLastStudents() {
+        logger.debug("Fetching last students");
+        List<Student> students = studentRepository.getLastStudents();
+        logger.debug("Found {} last students", students.size());
+        return students;
+    }
+
+    public List<String> getStudentsNamesStartingWithA() {
+        logger.debug("Fetching students whose names start with 'A'");
+        return studentRepository.findAll().stream()
                 .map(Student::getName)
-                .filter(name -> name.startsWith(beginName.toUpperCase()) || name.startsWith(beginName.toLowerCase()))
+                .filter(name -> name.startsWith("A"))
                 .map(String::toUpperCase)
                 .sorted()
                 .collect(Collectors.toList());
     }
 
-    public double getAverageAgeStudents() {
-        logger.info("Получаем средний возраст студентов");
-        return studentsRepository.findAll().stream()
-                .mapToInt(Student::getAge)
-                .average()
-                .orElse(0.0);
+    // Самый быстрый - Формула Гаусса: n(n+1)/2
+    //return 1_000_000L * (1_000_000L + 1L) / 2L;
+
+    public long calculateParallelSum() {
+        return IntStream.rangeClosed(1, 1_000_000)
+                .parallel()
+                .asLongStream()
+                .sum();
     }
-
-    public void getPrintParallel() {
-        logger.info("Получаем имена первых шести студентов");
-        List<Student> students = studentsRepository.findAll();
-
-        if (students.size() < 6) {
-            System.out.println("Слишком мало студентов");
-        }
-        printInStream(students, 0, 2);
-        Thread thread = new Thread(() -> printInStream(students, 2, 2));
-        Thread thread2 = new Thread(() -> printInStream(students, 4, 2));
-
-        thread.start();
-        thread2.start();
-
-    }
-
-    private void printInStream(Collection<Student> students, int offset, int limit) {
-        System.out.println("Выполняется тред: %s".formatted(Thread.currentThread().getName()));
-        students.stream()
-                .skip(offset)
-                .limit(limit)
-                .forEach(System.out::println);
-    }
-
-    private synchronized void printInStreamSynchronized(Collection<Student> students, int offset, int limit) {
-        printInStream(students, offset, limit);
-    }
-
-    public void getPrintSynchronized() {
-        logger.info("Получаем имена первых шести студентов");
-        List<Student> students = studentsRepository.findAll();
-
-        if (students.size() < 6) {
-            System.out.println("Слишком мало студентов");
-        }
-        printInStreamSynchronized(students, 0, 2);
-        Thread thread = new Thread(() -> printInStreamSynchronized(students, 2, 2));
-        Thread thread2 = new Thread(() -> printInStreamSynchronized(students, 4, 2));
-
-        thread.start();
-        thread2.start();
-
-    }
-
 }
-

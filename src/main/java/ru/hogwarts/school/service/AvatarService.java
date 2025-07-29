@@ -1,111 +1,151 @@
 package ru.hogwarts.school.service;
 
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import ru.hogwarts.school.exeption.AvatarNotFoundException;
-import ru.hogwarts.school.exeption.StudentNotFoundException;
 import ru.hogwarts.school.model.Avatar;
 import ru.hogwarts.school.model.Student;
 import ru.hogwarts.school.repository.AvatarRepository;
-import ru.hogwarts.school.repository.StudentRepository;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.UUID;
+import java.util.Objects;
+
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
 
 @Service
+@Transactional
 public class AvatarService {
-    @Value("${path.dir}")
-    private String pathDir;
-    private final StudentRepository studentRepository;
-    private final AvatarRepository avatarRepository;
     private static final Logger logger = LoggerFactory.getLogger(AvatarService.class);
 
-    public AvatarService(StudentRepository studentRepository, AvatarRepository avatarRepository) {
-        this.studentRepository = studentRepository;
+    @Value("${avatar.cover.dir.path}")
+    private String avatarDir;
+
+    private final StudentService studentService;
+    private final AvatarRepository avatarRepository;
+
+    public AvatarService(StudentService studentService, AvatarRepository avatarRepository) {
+        this.studentService = studentService;
         this.avatarRepository = avatarRepository;
+        logger.info("AvatarService initialized");
     }
 
-    public void uploadImage(long studentId, MultipartFile multipartFile) throws IOException {
-        logger.info("Загрузка изображения");
-
-        createDirectory();
-
-        Path filePath = Path.of(pathDir, UUID.randomUUID()
-                + "." + getExtension(multipartFile.getOriginalFilename()));
-        createAvatar(studentId, multipartFile, filePath.toString());
-
-        multipartFile.transferTo(filePath);
+    public Page<Avatar> getAllAvatars(int page, int size) {
+        logger.debug("Getting all avatars, page: {}, size: {}", page, size);
+        Page<Avatar> avatars = avatarRepository.findAll(PageRequest.of(page, size));
+        logger.debug("Found {} avatars", avatars.getTotalElements());
+        return avatarRepository.findAll(PageRequest.of(page, size));
     }
 
-    private String getExtension(String originalPath) {
-        logger.info("Метод получения расширения");
-        return originalPath.substring(originalPath.lastIndexOf(".") + 1);
-    }
+    public void uploadAvatar(Long studentId, MultipartFile file) throws IOException {
+        logger.info("Starting avatar upload for student ID: {}", studentId);
 
-
-    public void createAvatar(long studentId, MultipartFile multipartFile, String filePath) throws IOException {
-        logger.info("Метод создания аватара");
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new StudentNotFoundException(studentId));
-        avatarRepository.save(new Avatar(
-                filePath,
-                multipartFile.getSize(),
-                multipartFile.getContentType(),
-                multipartFile.getBytes(),
-                student
-        ));
-    }
-
-
-    private void createDirectory() throws IOException {
-        logger.info("Метод создания директории");
-        Path path = Path.of(pathDir);
-        if (Files.notExists(path)) {
-            Files.createDirectory(path);
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Файл не может быть пустым");
         }
-    }
 
-    public Avatar getAvatarFromDB(long studentId) {
-        logger.info("Метод получения аватара из базы данных");
-        chekExist(studentId);
-        return avatarRepository.getByStudentId(studentId)
-                .orElseThrow(() -> new AvatarNotFoundException(studentId));
-    }
+        if (!Objects.requireNonNull(file.getContentType()).startsWith("image/")) {
+            throw new IllegalArgumentException("Файл должен быть изображением");
+        }
 
-    public byte[] getAvatarFromLocal(long studentId) {
-        logger.info("Метод получения аватара из локального хранилища");
-        chekExist(studentId);
-        Avatar avatar = avatarRepository.getByStudentId(studentId)
-                .orElseThrow(() -> new AvatarNotFoundException(studentId));
-        String filePath = avatar.getFilePath();
-        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filePath))) {
-            return bis.readAllBytes();
+        Student student = studentService.getStudentById(studentId)
+                .orElseThrow(() -> {
+                    logger.error("Student not found with ID: {}", studentId);
+                    return new RuntimeException("Студент не найден");
+                });
+
+
+        String extension = getExtension(Objects.requireNonNull(file.getOriginalFilename()));
+        Path filePath = Path.of(avatarDir, studentId + "." + extension);
+        logger.debug("Preparing to save avatar to: {}", filePath);
+
+        Files.createDirectories(filePath.getParent());
+        Files.deleteIfExists(filePath);
+
+
+        try (InputStream is = file.getInputStream();
+             OutputStream os = Files.newOutputStream(filePath, CREATE_NEW);
+             BufferedInputStream bis = new BufferedInputStream(is);
+             BufferedOutputStream bos = new BufferedOutputStream(os)) {
+            bis.transferTo(bos);
+            logger.debug("Avatar file saved successfully");
         } catch (IOException e) {
-            throw new IllegalArgumentException("Получение картинки не возможно: " + e.getMessage());
+            logger.error("Failed to save avatar file", e);
+            throw e;
         }
-    }
 
-    private void chekExist(long studentId) {
-        logger.info("Метод проверки наличия изображения");
-        boolean studentExist = studentRepository.existsById(studentId);
-        if (!studentExist) {
-            throw new StudentNotFoundException(studentId);
+        Avatar avatar = avatarRepository.findByStudentId(studentId).orElse(new Avatar());
+        logger.debug("Found existing avatar: {}", avatar.getId() != null);
+        avatar.setStudent(student);
+        avatar.setFilePath(filePath.toString());
+        avatar.setFileSize(file.getSize());
+        avatar.setMediaType(file.getContentType());
+
+        try {
+            byte[] previewData = generateImagePreview(filePath);
+            avatar.setData(previewData);
+            logger.debug("Image preview generated successfully");
+        } catch (IOException e) {
+            logger.error("Failed to generate image preview", e);
+            throw e;
         }
+
+        Avatar savedAvatar = avatarRepository.save(avatar);
+        logger.info("Avatar uploaded successfully for student ID: {}. Avatar ID: {}", studentId, savedAvatar.getId());
     }
 
-    public List<Avatar> getAllAvatar(Integer pageNumber, Integer pageSize) {
-        logger.info("Метод получения всех аватаров");
-        PageRequest pageRequest = PageRequest.of(pageNumber - 1, pageSize);
-        return avatarRepository.findAll(pageRequest).getContent();
+
+    public Avatar findAvatar(Long studentId) {
+        logger.debug("Looking for avatar by student ID: {}", studentId);
+        return avatarRepository.findByStudentId(studentId)
+                .orElseThrow(() -> {
+                    logger.error("Avatar not found for student ID: {}", studentId);
+                    return new RuntimeException("Аватар не найден");
+                });
     }
 
+    private byte[] generateImagePreview(Path filePath) throws IOException {
+        logger.debug("Generating image preview for: {}", filePath);
+        try (InputStream is = Files.newInputStream(filePath);
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+            BufferedImage originalImage = ImageIO.read(is);
+            if (originalImage == null) {
+                logger.error("Failed to read image file: {}", filePath);
+                throw new IOException("Не удалось прочитать изображение");
+            }
+
+            int targetWidth = 100;
+            int targetHeight = (int) ((double) originalImage.getHeight() / originalImage.getWidth() * targetWidth);
+            logger.trace("Original dimensions: {}x{}, Preview dimensions: {}x{}",
+                    originalImage.getWidth(), originalImage.getHeight(), targetWidth, targetHeight);
+
+
+            BufferedImage preview = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
+            Graphics2D graphics = preview.createGraphics();
+            graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            graphics.drawImage(originalImage, 0, 0, targetWidth, targetHeight, null);
+            graphics.dispose();
+
+            if (!ImageIO.write(preview, "jpg", baos)) {
+                logger.error("Failed to generate preview image in JPG format");
+                throw new IOException("Не удалось сгенерировать превью");
+            }
+            return baos.toByteArray();
+        }
+
+    }
+
+    private String getExtension(String fileName) {
+        return fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+    }
 }

@@ -1,12 +1,13 @@
 package ru.hogwarts.school.controller;
 
-import jakarta.annotation.PostConstruct;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.hogwarts.school.model.Faculty;
 import ru.hogwarts.school.model.Student;
 import ru.hogwarts.school.service.StudentService;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
 @RestController
 @RequestMapping("/student")
@@ -17,81 +18,71 @@ public class StudentController {
         this.studentService = studentService;
     }
 
-
-    @PostMapping("/add")
+    @PostMapping
     public Student createStudent(@RequestBody Student student) {
         return studentService.createStudent(student);
     }
 
-    @DeleteMapping("{id}/delete")
-    public Student deleteStudent(@PathVariable("id") long id) {
-        return studentService.deleteStudent(id);
+    @GetMapping("{id}")
+    public ResponseEntity<Student> getStudent(@PathVariable long id) {
+        return studentService.getStudentById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("{id}/get")
-    public Student getStudentInfo(@PathVariable("id") long id) {
-        return studentService.findStudent(id);
+    @PutMapping
+    public Student updateStudent(@RequestBody Student student) {
+        return studentService.updateStudent(student);
     }
 
-    @PutMapping("/update")
-    public Student updateStudent(@RequestParam("id") long id, @RequestBody Student studentForUpdate) {
-        return studentService.updateStudent(id, studentForUpdate);
+    @DeleteMapping("{id}")
+    public void deleteStudent(@PathVariable long id) {
+        studentService.deleteStudent(id);
     }
 
-    @GetMapping("/get/by-age")
-    public List<Student> findAllByAge(@RequestParam("age") int age) {
-        return studentService.findAllByAge(age);
+    @GetMapping("/age/{age}")
+    public List<Student> getStudentsByAge(@PathVariable int age) {
+        return studentService.getStudentsByAge(age);
     }
 
-    @GetMapping("/get/by-age-between")
-    public List<Student> findByAgeBetween(@RequestParam("ageMin") int ageMin,
-                                          @RequestParam("ageMax") int ageMax) {
-        return studentService.findByAgeBetween(ageMin, ageMax);
+    @GetMapping("/age-between")
+    public List<Student> getStudentsByAgeBetween(
+            @RequestParam int min,
+            @RequestParam int max) {
+        return studentService.findStudentsByAgeBetween(min, max);
     }
 
-
-    @GetMapping("/{idFaculty}/get/student")
-    public List<Student> findByFacultyId(@PathVariable("idFaculty") long idFaculty) {
-        return studentService.findByFacultyId(idFaculty);
+    @GetMapping("/{id}/faculty")
+    public Faculty getStudentFaculty(@PathVariable Long id) {
+        return studentService.getStudentFaculty(id);
     }
 
-    @GetMapping("/{id_student}/get/faculty")
-    public Faculty findFacultyByStudentId(@PathVariable("id_student") long id) {
-        return studentService.findStudent(id).getFaculty();
+    @GetMapping("/count")
+    public Integer getStudentsCount() {
+        return studentService.getTotalStudentsCount();
     }
 
-    @GetMapping("/countStudent")
-    public int countStudent() {
-        return studentService.countStudent();
+    @GetMapping("/avg-age")
+    public Double getAverageAge() {
+        return studentService.getAverageStudentsAge();
     }
 
-    @GetMapping("/avgAgeStudent")
-    public long avgAgeStudent() {
-        return studentService.avgAgeStudent();
+    @GetMapping("/last-students")
+    public List<Student> getLastStudents() {
+        return studentService.getLastStudents();
     }
 
-    @GetMapping("/getLastFiveStudent")
-    public List<Student> getLastFiveStudent() {
-        return studentService.getLastFiveStudent();
+    @GetMapping("/names-starting-with-a")
+    public List<String> getStudentsNamesStartingWithA() {
+        return studentService.getStudentsNamesStartingWithA();
     }
 
-    @GetMapping("/get/by-beginName")
-    public List<String> findAllByBeginName(@RequestParam("beginName")String beginName){
-        return studentService.findAllByBeginName(beginName);
-    }
-
-    @GetMapping("/avg-age-student-stream")
-    public double getAverageAgeStudents() {
-        return studentService.getAverageAgeStudents();
-    }
-
-    @GetMapping("/students/print-parallel")
-    public void getPrintParallel() {
-        studentService.getPrintParallel();
-    }
-
-    @GetMapping("/students/print-synchronized")
-    public void getPrintSynchronized() {
-        studentService.getPrintSynchronized();
+    @GetMapping("/parallel-sum")
+    public long getParallelSum() {
+        return IntStream.rangeClosed(1, 1_000_000)
+                .parallel()
+                .asLongStream()
+                .sum();
     }
 }
+

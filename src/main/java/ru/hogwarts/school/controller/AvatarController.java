@@ -1,5 +1,9 @@
 package ru.hogwarts.school.controller;
 
+
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -9,41 +13,81 @@ import ru.hogwarts.school.model.Avatar;
 import ru.hogwarts.school.service.AvatarService;
 
 import java.io.IOException;
-import java.util.List;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @RestController
 @RequestMapping("/avatar")
 public class AvatarController {
+
     private final AvatarService avatarService;
 
     public AvatarController(AvatarService avatarService) {
         this.avatarService = avatarService;
     }
 
-    @PostMapping(path = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public void uploadImage(@RequestParam("studentId") long studentId,
-                            @RequestBody MultipartFile multipartFile) throws IOException {
-        avatarService.uploadImage(studentId, multipartFile);
+    @PostMapping(value = "/{id}/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> uploadAvatar(@PathVariable Long id, @RequestParam MultipartFile avatar) throws IOException {
+        if (avatar == null || avatar.isEmpty()) {
+            return ResponseEntity.badRequest().body("File is empty");
+        }
+        if (avatar.getSize() > 1024 * 300) { // 300 KB
+            return ResponseEntity.badRequest().body("File is too large (max 300 KB)");
+        }
+
+        try {
+            avatarService.uploadAvatar(id, avatar);
+            return ResponseEntity.ok().build();
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to upload avatar: " + e.getMessage());
+        }
     }
 
-    @GetMapping("/get/from-db")
-    public ResponseEntity<byte[]> getAvatarFromDB(@RequestParam("studentId") long studentId) {
-        Avatar avatar = avatarService.getAvatarFromDB(studentId);
-        return ResponseEntity.status(HttpStatus.OK)
-                .contentType(MediaType.parseMediaType(avatar.getMediaType()))
-                .body(avatar.getData());
+    @GetMapping(value = "/{id}/cover/preview")
+    public ResponseEntity<byte[]> downloadAvatarPreview(@PathVariable Long id) {
+        Avatar avatar = avatarService.findAvatar(id);
+        if (avatar == null || avatar.getData() == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(avatar.getMediaType()));
+        headers.setContentLength(avatar.getData().length);
+
+        return ResponseEntity.status(HttpStatus.OK).headers(headers).body(avatar.getData());
     }
 
-    @GetMapping(path = "/get/from-local", produces = MediaType.IMAGE_JPEG_VALUE)
-    public byte[] getAvatarFromLocal(@RequestParam("studentId") long studentId) {
-        return avatarService.getAvatarFromLocal(studentId);
+    @GetMapping(value = "/{id}/cover")
+    public void downloadAvatar(@PathVariable Long id, HttpServletResponse response) throws IOException {
+        Avatar avatar = avatarService.findAvatar(id);
+        if (avatar == null || avatar.getFilePath() == null) {
+            response.setStatus(404);
+            return;
+        }
+
+        Path path = Path.of(avatar.getFilePath());
+        if (!Files.exists(path)) {
+            response.setStatus(404);
+            return;
+        }
+
+        try (InputStream is = Files.newInputStream(path);
+             OutputStream os = response.getOutputStream()) {
+            response.setStatus(200);
+            response.setContentType(avatar.getMediaType());
+            response.setContentLength((int) avatar.getFileSize());
+            is.transferTo(os);
+        }
     }
 
-    @GetMapping("/getAllAvatar")
-    public ResponseEntity<List<Avatar>> getAllAvatar(@RequestParam("page") Integer pageNumber,
-                                                     @RequestParam("size") Integer pageSize) {
-        List<Avatar> avatars = avatarService.getAllAvatar(pageNumber, pageSize);
+    @GetMapping
+    public ResponseEntity<Page<Avatar>> getAllAvatars(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<Avatar> avatars = avatarService.getAllAvatars(page, size);
         return ResponseEntity.ok(avatars);
     }
-
 }
